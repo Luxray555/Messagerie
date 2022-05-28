@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messagerie</title>
+    <link rel="shortcut icon" href="images/duck_icon.jpg" type="image/x-icon">
+    <link rel="stylesheet" href="css/index.css">
+    <link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <main>
+        <ul class="listUser">
+        </ul>
+        <button class="mobileUserListBtn">
+            <img src="images/icons/arrow.png" alt="arrow">
+        </button>
+        <div class="chat">
+            <ul id="messages"></ul>
+            <form id="form" action="">
+                <input id="input" autocomplete="off">
+                <button id="sendButton">Send</button>
+            </form>
+        </div>
+    </main>
+</body>
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/index.js"></script>
+</html>
