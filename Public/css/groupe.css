@@ -1,0 +1,97 @@
+body{
+    height: 100vh;
+
+}
+main{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+.boxGrp{
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(238, 255, 205);
+    border-radius: 10px;
+    text-align: center;
+    width: 1000px;
+    margin: auto;
+}
+.boxGrp h1{
+    color: #2b2b2b;
+    font-size: 50px;
+    font-family: 'Courier New', Courier, monospace;
+}
+.posGrp{
+    height: 600px;
+    display: flex;
+    flex-direction: row;
+}
+.listGrp{
+    background-color: rgb(71, 71, 71);
+    border-radius: 10px;
+    padding: 10px;
+    margin: 0px;
+    width: 400px;
+}
+.listGrp li{
+    list-style-type: none;
+}
+.listGrp li button{
+    cursor: pointer;
+    font-size: 20px;
+    width: 100%;
+    padding: 5px;
+    background-color: white;
+    border: black solid 2px;
+    transition: all .4s;
+}
+.listGrp li button:hover{
+    background-color: black;
+    color: white;
+    border: white solid 2px
+}
+form{
+    width: 100%;
+}
+.form{
+    background-color: #2b2b2b;
+    border-radius: 10px;
+    margin: 0px 0px 0px 5px;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    padding-top: 100px;
+}
+.form h2{
+    color: white;
+    font-weight: bold;
+    font-size: 35px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    margin-bottom: 20px;
+}
+.form label{
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+.form input[type="text"]{
+    margin-bottom: 20px;
+    border-radius: 2px;
+    border: #2b2b2b solid 2px;
+    text-align: center;
+    padding: 5px;
+}
+.form button{
+    cursor: pointer;
+    font-size: 19px;
+    padding: 5px 10px;
+    background-color: yellow;
+    border-radius: 5px;
+    border: #2b2b2b solid 2px;
+    transition: all .4s;
+}
+.form button:hover{
+    background-color: #414141;
+    color: white;
+}
