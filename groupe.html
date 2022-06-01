@@ -3,20 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/groupe.css">
+    <title>Groupe</title>
+	<link rel="shortcut icon" href="images/duck_icon.jpg" type="image/x-icon">
 </head>
 <body>
+    <main>
     <div class="boxGrp">
-    <h1>Groupe</h1>
-    <ul class="listGrp"></ul>
-    <form action="index.html" method="post">
-        <h2>Nouveau Groupe</h2>
-        <label for="newGroupe">
-            Nom du groupe :
-            <input type="text" placeholder="groupe">
-        </label>
-    </form>
+        <h1></h1>
+        <div class="posGrp">
+            <ul class="listGrp">
+            </ul>
+            <div class="form">
+                <form action="/CreateGroupe" method="post">
+                    <h2>Nouveau Groupe</h2>
+                    <label for="newGroupe">
+                        Nom du groupe :
+                        <input type="text" placeholder="nom" name="nomGroupe">
+                    </label><br>
+                    <button type="submit">Créer</button>
+                </form>
+            </div>
+        </div>
     </div>
+    </main>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/groupe.js"></script>
 </body>
 </html>

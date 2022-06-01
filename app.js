@@ -1,8 +1,10 @@
 //require
 let express = require('express');
 const session = require('express-session');
+const url = require('url');
 const cookieParser = require("cookie-parser");
 let mysql = require('mysql');
+const EventEmitter = require('events');
 
 //Create web app
 let app = express();
@@ -14,7 +16,7 @@ app.use(cookieParser());
 app.use(session({
   
     // It holds the secret key for session
-    secret: 'some secret',
+    secret: 'jhzrfjhrsedg',
     
     //Set options cookies
     cookie: { maxAge: 86400000 },
@@ -29,12 +31,15 @@ app.use(session({
 //Create Server socket.io
 const http = require('http').Server(app);
 const io = require("socket.io")(http);
-io.socketsJoin("general");
+io.setMaxListeners(0);
 let userList = {};
+let groupeList;
+
+
 
 //Connection bdd
 let bdd = mysql.createConnection({
-    database: "messagerietest",
+    database: "messagerie",
     host: "localhost",
     user: "root",
     password: "",
@@ -47,6 +52,31 @@ bdd.connect(function(err) {
     console.log("Connected bdd!");
 });
 
+bdd.query('SELECT * FROM groupes',(err, result) => {
+    if (err) throw err;
+    for(i=0;i<result.length;i++){
+        if(userList.hasOwnProperty(result[i]['idGroupe'])){
+            result[i]['nom'] = result[i]['nom']+" ("+Object.keys(userList[result[i]['idGroupe']]).length+")";
+        }else{
+            result[i]['nom'] = result[i]['nom']+" ("+0+")";
+        }
+    }
+    groupeList = result;
+})
+setInterval(() => {
+    bdd.query('SELECT * FROM groupes',(err, result) => {
+        if (err) throw err;
+        for(i=0;i<result.length;i++){
+            if(userList.hasOwnProperty(result[i]['idGroupe'])){
+                result[i]['nom'] = result[i]['nom']+" ("+Object.keys(userList[result[i]['idGroupe']]).length+")";
+            }else{
+                result[i]['nom'] = result[i]['nom']+" ("+0+")";
+            }
+        }
+        groupeList = result;
+    })
+}, 1000);
+
 //Plus(++)
 const { listen } = require('express/lib/application');
 const { clear } = require('console');
@@ -54,63 +84,150 @@ const { clear } = require('console');
 //Setup static and views
 app.use(express.static('public'));
 
-//Show index
-app.get('/',(req,res) => {
-    if(req.session.authenticated){
-        let snn = req.session.user;
-        res.sendFile(__dirname+'/index.html');
-    }else{
-        req.session.destroy();
-        res.redirect('/login');
-    }
-})
-
-app.post('/',(req, res) => {
-    const pseudo = req.body.pseudo;
-    req.session.authenticated = true;
-    req.session.user = { pseudo };
+//Groupe get/post
+app.get('/Groupe',(req,res) => {
     io.on('connection',(socket) => {
-        userList[socket.id] = req.session.user;
-        io.emit('userInteraction',userList);
+        socket.emit('sessionPseudo',req.session.pseudo);
+        socket.emit('listGroupeInformation', groupeList);
+        setInterval(() => {
+            socket.emit('listGroupeInformation', groupeList);
+        },5000)
     })
-    res.sendFile(__dirname+'/index.html')
+    if(!req.session.authenticated){
+        req.session.pseudo = undefined;
+        req.session.mdp = undefined;
+        res.redirect('/login');
+    }else{
+        res.sendFile(__dirname+'/groupe.html');
+    }
 })
 
-app.get('/login',(req, res) => {
-    if(req.session.authenticated){
-        console.log(req.session);
-        req.session.destroy();
+app.post('/Groupe',(req, res) => {
+    const pseudo = req.body.pseudo;
+    const mdp = req.body.pass;
+    if(req.session.authenticated == false || req.session.authenticated == undefined){
+        bdd.query("SELECT mdp FROM users WHERE pseudo=?", [pseudo], function (err, result) {
+            if (err) throw err;
+            if(result.length != 0){
+                if(mdp == result[0]['mdp']){
+                    req.session.authenticated = true;
+                    req.session.pseudo = pseudo;
+                    req.session.mdp = mdp;
+                    res.sendFile(__dirname+'/groupe.html')
+                }else{
+                    res.redirect('/login');
+                }
+            }else{
+                bdd.query("INSERT INTO users(pseudo, mdp) VALUES (?, ?)", [pseudo, mdp], function (err) {
+                    if (err) throw err;
+                    req.session.authenticated = true;
+                    req.session.pseudo = pseudo;
+                    req.session.mdp = mdp;
+                });
+                res.sendFile(__dirname+'/groupe.html');
+            }
+        });
+    }else{
+        res.sendFile(__dirname+'/groupe.html');
     }
+    io.on('connection',(socket) => {
+        socket.emit('sessionPseudo',req.session.pseudo);
+        socket.emit('listGroupeInformation', groupeList);
+        setInterval(() => {
+            socket.emit('listGroupeInformation', groupeList);
+        },1000)
+    });
+})
+
+
+
+//Login get
+app.get('/login',(req, res) => {
+    req.session.pseudo = undefined;
+    req.session.mdp = undefined;
     res.sendFile(__dirname+'/login.html');
 })
 
-io.on('connection', (socket) => {
-    console.log('a user is connected:'+socket.id);
-    bdd.query("SELECT * FROM messages", function (err, result) {
-        if (err) throw err;
-        socket.emit('last messages',result);
-    });
-    socket.on('disconnect', () => {
-        console.log('a user is disconnect:'+socket.id);
-        delete userList[socket.id];
-        io.emit('userInteraction',userList);
-    })
-    socket.on('chat message', (msg) => {
-        if(msg != ""){
-            bdd.query("INSERT INTO messages(user, message) VALUES (?, ?)", [userList[socket.id]['pseudo'], msg], function (err, result) {
+
+
+//Index get
+app.get('/', (req, res) => {
+    if(url.parse(req.url, true).query['groupe'] != undefined){
+        if(req.session.authenticated){
+            const pseudo = req.session.pseudo;
+            let grp = url.parse(req.url, true).query['groupe'];
+            bdd.query('SELECT * FROM groupes WHERE idGroupe=?', [grp], (err, result) => {
                 if (err) throw err;
-                socket.emit('last messages',result);
-            });
+                if(result.length == 0){
+                 res.redirect('/Groupe');
+                }else{
+                    res.sendFile(__dirname+'/index.html');
+                }
+            })
+            io.once('connection', (socket) => {
+                if(userList[grp] == undefined){
+                    let sck = socket.id
+                    userList[grp] = {};
+                    userList[grp][sck] = pseudo;
+                    delete sck;
+                }else{
+                    userList[grp][socket.id] = pseudo;
+                }
+                socket.join('groupe: '+grp);
+                io.to('groupe: '+grp).emit('userInteraction',userList[grp]);
+                bdd.query("SELECT * FROM messages WHERE idGroupe=?", [grp], function (err, result) {
+                    if (err) throw err;
+                    socket.emit('last messages',result);
+                });
+                socket.on('disconnect', () => {
+                    delete userList[grp][socket.id];
+                    io.to('groupe: '+grp).emit('userInteraction',userList[grp]);
+                })
+                socket.on('chat message', (msg) => {
+                    if(msg != ""){
+                        bdd.query("INSERT INTO messages(message, idGroupe, pseudoUser) VALUES (?, ?, ?)", [msg, grp, userList[grp][socket.id]], function (err, result) {
+                            if (err) throw err;
+                            socket.emit('last messages',result);
+                        });
+                    }
+                    console.log('message reçus:'+msg);
+                    io.to('groupe: '+grp).emit('chat message', userList[grp][socket.id]+" : "+msg);
+                })
+                socket.on('focusUser', (sck) => {
+                    io.to('groupe: '+grp).emit('sFocusUser',sck);
+                })
+                socket.on('blurUser', (sck) => {
+                    io.to('groupe: '+grp).emit('sBlurUser',sck);
+                })
+            })
+        }else{
+            req.session.destroy();
+            res.redirect('/login');
         }
-        console.log('message reçus:'+msg);
-        io.emit('chat message', userList[socket.id]['pseudo']+" : "+msg);
+    }else{
+        res.redirect('/Groupe');
+    }
+})
+
+app.post('/CreateGroupe', (req, res) => {
+    bdd.query('SELECT * FROM groupes WHERE nom=?', [req.body.nomGroupe], (err, result) => {
+        if (err) throw err;
+        if(result.length==0){
+            bdd.query('INSERT INTO groupes(nom) VALUES (?)', [req.body.nomGroupe], (err2) => {
+                if (err2) throw err2;
+            })
+            bdd.query('SELECT idGroupe FROM groupes WHERE nom=?', [req.body.nomGroupe], (err2, result2) => {
+                if (err2) throw err2;
+                res.redirect('/?groupe='+result2[0]['idGroupe']);
+            })
+        }else{
+            //res.redirect('/Groupe');
+        }
     })
-    socket.on('focusUser', (sck) => {
-        io.emit('sFocusUser',sck);
-    })
-    socket.on('blurUser', (sck) => {
-        io.emit('sBlurUser',sck);
-    })
+})
+
+io.on('connection', (socket) => {
+    
 });
 
 //server port
