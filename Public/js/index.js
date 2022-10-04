@@ -10,7 +10,12 @@ btnList.addEventListener('click',() => {
         btnList.classList.add('open');
     }
 })
-
+window.addEventListener('resize', () => {
+    if(window.matchMedia("(min-width: 1200px)").matches && listUserDoc.classList.contains('open')){
+        listUserDoc.classList.remove('open');
+        btnList.classList.remove('open');
+    }
+}, true)
 
 
 
@@ -37,16 +42,14 @@ input.addEventListener('blur',() => {
 })
 socket.on('sFocusUser',(sck) => {
     for(i=0;i<listLiUser.length;i++){
-        console.log(listLiUser[i].innerHTML);
-        if(listLiUser[i].innerHTML == listUser[sck]['pseudo']){
+        if(listLiUser[i].innerHTML == listUser[sck]){
             listLiUser[i].classList.add('talking');
         }
     }
 })
 socket.on('sBlurUser',(sck) => {
     for(i=0;i<listLiUser.length;i++){
-        console.log(listLiUser[i].innerHTML);
-        if(listLiUser[i].innerHTML == listUser[sck]['pseudo']){
+        if(listLiUser[i].innerHTML == listUser[sck]){
             listLiUser[i].classList.remove('talking');
         }
     }
@@ -56,7 +59,7 @@ socket.on('userInteraction',(list) => {
     listUser = list;
     listUserDoc.innerHTML="";
     for(key in listUser){
-        createUser(listUser[key]['pseudo']);
+        createUser(listUser[key]);
     }
     listLiUser = document.querySelectorAll('.listUser li');
 })
@@ -64,7 +67,7 @@ socket.on('userInteraction',(list) => {
 socket.on('connect',()=>{
     socket.on('last messages',(msg) =>{
         for(i=0;i<msg.length;i++){
-            addMessage(msg[i]['user']+' : '+msg[i]['message']);
+            addMessage(msg[i]['pseudoUser']+' : '+msg[i]['message']);
         }
     })
 });
